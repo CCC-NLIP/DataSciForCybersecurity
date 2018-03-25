@@ -9,4 +9,4 @@ Further information is available on the [Cambridge Cybercrime Centre website](ht
 * blah
 * blah
 
-_Paula Buttery, Andrew Caines, Alice Hutchings, Sergio Pastrana Portillo; March 2018_
+_Paula Buttery, Andrew Caines, Alice Hutchings, Sergio Pastrana; March 2018_
