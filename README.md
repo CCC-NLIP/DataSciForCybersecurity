@@ -6,7 +6,6 @@ Further information is available on the [Cambridge Cybercrime Centre website](ht
 
 #### Contents
 * CrimeBBprocessR: library of R scripts for CrimeBB analysis and automated labelling;
-* blah
-* blah
+* Social_Network_Analysis: python and R scripts for Social Network Analysis and analysis of interests
 
 _Paula Buttery, Andrew Caines, Alice Hutchings, Sergio Pastrana; March 2018_
