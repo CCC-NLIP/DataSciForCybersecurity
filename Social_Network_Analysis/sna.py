@@ -960,6 +960,176 @@ def topicsPerCommunity(forum,onlyThreads=True):
 
 	#print "Louvain Partition: ", partition
 
+# Extracts the topics of a list of members using LDA and dumps the results in a pickle file
+def getTopics(filename,memberList):
+	forum=-1
+	numTopics=4
+	onlyThreads=True
+	if os.path.exists(filename):
+		topics=pickle.load(open(filename))
+	else:
+		topics={}
+	for c,member in enumerate(memberList):
+		print "%s Processing member %s (%s/%s)"%(datetime.now().strftime(tsFormat),member,c,len(memberList))
+		if not member in topics.keys():
+			topics[member]=[]
+			LDA_model=topicModelling([member],forum,onlyThreads=onlyThreads,verbose=False,numTopics=numTopics)
+			#print "Member %s. Topics: "%keyActorsOriginal[member]
+			for topic in LDA_model.print_topics(num_topics=-1, num_words=7):
+				for t in topic[1].split('+'):
+					term=t.split("*")[1].replace('"','')
+					topics[member].append(term)
+		else:
+			print "%s WARNING. Member %s already processed"%(datetime.now().strftime(tsFormat),member)
+	pickle.dump(topics,open(filename,'wb'))
+	return topics
+
+# Compare the list of topics from the key actors to detect potential key actors involved in cybercrime activities
+def showTopicsMembers(potentialSet,printTerms=False):
+	MIN_TIMES_TO_PRINT=6
+	THRESHOLD_NUM_CRIME_KEYWORDS=2
+	THRESHOLD_DISTANCE=0.2
+
+	# Write here the list of ids of identified key actors
+	listKeyActors=[]
+
+	# Put here the list of members identified by Clustering
+	allMembersPotentialClusteringUnfiltered=[]
+
+	# Put here the list of members identified by Logistic Regression
+	allMembersPotentialLogisticRegressionUnfiltered=[]
+
+	# Put here the list of members identified by Social Network Analysis
+	allMembersPotentialSNAUnfiltered=[]
+
+	# Remove those that are already identified as key actors
+	allMembersPotentialClusteringUnfiltered=[f for f in allMembersPotentialClusteringUnfiltered if not f in listKeyActors]
+ 	allMembersPotentialLogisticRegressionUnfiltered=[f for f in allMembersPotentialLogisticRegressionUnfiltered if not f in listKeyActors]
+ 	allMembersPotentialSNAUnfiltered=[f for f in allMembersPotentialSNAUnfiltered if not f in listKeyActors]
+
+ 	# Get overlaps
+ 	allPotentialMembersCommon=[m for m in allMembersPotentialSNAUnfiltered if m in allMembersPotentialLogisticRegressionUnfiltered and m in allMembersPotentialSNAUnfiltered]
+	allPotentialMembersCommon_LR_C=[m for m in allMembersPotentialClusteringUnfiltered if m in allMembersPotentialLogisticRegressionUnfiltered and not m in allPotentialMembersCommon]
+	allPotentialMembersCommon_SNA_C=[m for m in allMembersPotentialClusteringUnfiltered if m in allMembersPotentialSNAUnfiltered and not m in allPotentialMembersCommon]
+	allPotentialMembersCommon_LR_SNA=[m for m in allMembersPotentialSNAUnfiltered if m in allMembersPotentialLogisticRegressionUnfiltered and not m in allPotentialMembersCommon]
+
+	# Get uniques 
+
+	allMembersPotentialLogisticRegression=[f for f in allMembersPotentialLogisticRegressionUnfiltered if not f in allMembersPotentialSNAUnfiltered and not f in allMembersPotentialClusteringUnfiltered]
+	allMembersPotentialSNA=[f for f in allMembersPotentialSNAUnfiltered if not f in allMembersPotentialLogisticRegressionUnfiltered and not f in allMembersPotentialClusteringUnfiltered]
+	allMembersPotentialClustering=[f for f in allMembersPotentialClusteringUnfiltered if not f in allMembersPotentialLogisticRegressionUnfiltered and not f in allMembersPotentialSNAUnfiltered]
+
+	# Print stats
+	print "listKeyActors: %s"%len(listKeyActors)
+	print "allMembersPotentialClusteringUnfiltered: %s"%len(allMembersPotentialClusteringUnfiltered)
+	print "allMembersPotentialLogisticRegressionUnfiltered: %s"%len(allMembersPotentialLogisticRegressionUnfiltered)
+	print "allMembersPotentialSNAUnfiltered: %s"%len(allMembersPotentialSNAUnfiltered)
+	print "allMembersPotentialClustering: %s"%len(allMembersPotentialClustering)
+	print "allMembersPotentialSNA: %s"%len(allMembersPotentialSNA)
+	print "allMembersPotentialLogisticRegression: %s"%len(allMembersPotentialLogisticRegression)
+	print "allPotentialMembersCommon_LR_C: %s"%len(allPotentialMembersCommon_LR_C)
+	print "allPotentialMembersCommon_SNA_C: %s"%len(allPotentialMembersCommon_SNA_C)
+	print "allPotentialMembersCommon_LR_SNA: %s"%len(allPotentialMembersCommon_LR_SNA)
+	print "allPotentialMembersCommon: %s"%len(allPotentialMembersCommon)
+	
+	filename=OUTPUT_DIR+"topicsActors.pickle"
+	if not os.path.exists(filename):
+		topics=getTopics(filename,listKeyActors)
+	else:
+		topics=pickle.load(open(filename))
+
+	# Define the set to analyse depending on the parameter
+	if potentialSet=="LOGISTIC_REGRESSION":
+		allPotentialMembers=allMembersPotentialLogisticRegression
+	elif potentialSet=='SNA':
+		allPotentialMembers=allMembersPotentialSNA		
+	elif potentialSet=="CLUSTERING":
+		allPotentialMembers=allMembersPotentialClustering
+	elif potentialSet=='COMMON-LR-C':
+		allPotentialMembers=allPotentialMembersCommon_LR_C
+	elif potentialSet=='COMMON-SNA-C':
+		allPotentialMembers=allPotentialMembersCommon_SNA_C		
+	elif potentialSet=='COMMON-LR-SNA':
+		allPotentialMembers=allPotentialMembersCommon_LR_SNA		
+	elif potentialSet=='COMMON':		
+		allPotentialMembers=allPotentialMembersCommon
+	if len (allPotentialMembers)==0:
+		print "%s has no common members"%potentialSet
+		return
+	
+
+
+	# Get the topics for the set of key actors and the set of potential
+	listTopicsKA=[]
+	listTopicsPotential=[]
+	for member in topics.keys():
+		for topic in topics[member]:
+			if len(topic.strip())>1 and not "★" in topic:
+				if member in listKeyActors:
+					if not topic in listTopicsKA:
+						listTopicsKA.append(topic)
+				elif member in allPotentialMembers:
+					if not topic in listTopicsPotential:
+						listTopicsPotential.append(topic)
+
+
+
+	# Calculate the distances of each of the potential key actors by comparing with the topics of the key actors
+	distances=defaultdict(lambda:0)
+	for y in allPotentialMembers:
+		distances[y]+=sum(1 for term in listTopicsKA if term in topics[y])/float(len(topics[y]))			
+
+	# Oder distances and apply thresholds
+	sortedDistances=sorted(distances.items(),key=operator.itemgetter(1),reverse=True)
+	numPredicted=0
+	totalDistance=0.0
+	totalMatchesKeyTerm=0.0
+	closest=0.0
+	farthest=1.0
+	predictedActors=[]
+	for potentialActor,distance in sortedDistances:
+		printMember=0
+		toPrint="%s=%.2f\n["%(potentialActor,distance)
+		totalDistance+=distance
+		if distance>closest: closest=distance
+		if distance<farthest: farthest=distance
+		processedTerms=[]
+		totalTerms=0
+		keyTerms=0
+		for term in topics[potentialActor]:
+			if not term.strip() in processedTerms:
+				totalTerms+=1
+				processedTerms.append(term.strip())
+				toPrint+= "%s "%term.strip()
+				#if term.strip() in ['rat','bot','botnet','ddos','crypter','keylogger','bypass','hacking','hacker','hack','fud','account','shell','installs'] and not term.strip() in processedTerms:
+				if term.strip() in ['rat','account','crypter','fud','bot','shell','booter','installs','ddos','darkcomet','keylogger','exploit','stealer','stresser','botnet','malware','spread']:
+					keyTerms+=1 
+		toPrint+= "]"
+		totalMatchesKeyTerm+=keyTerms/float(totalTerms)
+		
+		if keyTerms>=THRESHOLD_NUM_CRIME_KEYWORDS and distance >= THRESHOLD_DISTANCE:
+			numPredicted+=1
+			predictedActors.append(str(potentialActor))
+			if printTerms: print "******************************************************************************************************************"
+		if printTerms: print toPrint
+		if keyTerms>=THRESHOLD_NUM_CRIME_KEYWORDS and distance >= THRESHOLD_DISTANCE:
+			if printTerms: print "******************************************************************************************************************"
+		if printTerms: print
+	print
+	print "---------"
+	print potentialSet
+	print "---------"
+	print "Predicted %s users out of %s (%.2f)"%(numPredicted,len(sortedDistances),(numPredicted*100.0/len(sortedDistances)))
+	print "Average distance: %.2f"%(totalDistance/len(sortedDistances))
+	print "Farthest distance: %.2f"%(farthest)
+	print "Closest distance: %.2f"%(closest)
+	print "Average matches of key terms: %.2f"%(totalMatchesKeyTerm/len(sortedDistances))
+	print "%s/%s (%.2f) & %.2f & %.2f & %.2f "%(numPredicted,len(sortedDistances),(numPredicted*100.0/len(sortedDistances)),(totalDistance/len(sortedDistances)),farthest,closest)
+	print "Predicted actors: \n\t%s"%(" - ".join(predictedActors))
+	print
+
+
+
 #### GLOBAL VARIABLES TO SET ###
 SITE=0 # Id of the site from the CrimeBB Dataset
 OUTPUT_DIR='.'
