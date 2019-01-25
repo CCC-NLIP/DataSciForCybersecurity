@@ -10,14 +10,20 @@
 #' predict_posttype(my.df)
 
 predict_posttype <- function(df, model=NULL, train.dtm=NULL, labs=NULL) {
+  # get	working	directory
+  pwd <- getwd()
+  prefix <- 'tools/CrimeBBprocessR/R/'
+  if (grepl('CrimeBBprocessR/R/', pwd)) {
+    prefix <- './'
+  }
 
   # load linear model pre-trained by postTypeAuthorIntentAddresseeExperiments.R
   if (is.null(model)) {
-    model <- readRDS('postType_LM.rds')
+    model <- readRDS(paste0(prefix, 'postType_LM.rds'))
   }
   # plus associated training data
   if (is.null(train.dtm)) {
-    train.dtm <- readRDS('postType_dtm.rds')
+    train.dtm <- readRDS(paste0(prefix, 'postType_dtm.rds'))
   }
   # and label set (needed with e.g. XGBoost, not LM)
   #if (is.null(labs)) {

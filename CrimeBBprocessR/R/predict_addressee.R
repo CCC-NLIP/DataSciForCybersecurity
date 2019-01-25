@@ -9,14 +9,20 @@
 #' predict_addressee(my.df)
 
 predict_addressee <- function(df, model=NULL, train.dtm=NULL, labs=NULL) {
+  # get working directory
+  pwd <- getwd()
+  prefix <- 'tools/CrimeBBprocessR/R/'
+  if (grepl('CrimeBBprocessR/R/', pwd)) {
+    prefix <- './'
+  }
   
   # load SVM model pre-trained by postTypeAuthorIntentAddresseeExperiments.R
   if (is.null(model)) {
-    model <- readRDS('addressee_SVM.bin')
+    model <- readRDS(paste0(prefix, 'addressee_SVM.rds'))
   }
   # plus associated training data
   if (is.null(train.dtm)) {
-    train.dtm <- readRDS('addressee_dtm.rds')
+    train.dtm <- readRDS(paste0(prefix, 'addressee_dtm.rds'))
   }
   # and label set (needed with e.g. XGBoost, not SVM)
   #if (is.null(labs)) {
@@ -26,9 +32,9 @@ predict_addressee <- function(df, model=NULL, train.dtm=NULL, labs=NULL) {
   df$addressee <- ''
   df$addresseeType <- ''
   for (r in 1:nrow(df)) {
-    test.dtm <- data_prep(df$post[r])
+    test.dtm <- data_prep(df[r,])
     xTest <- matrix_align(train.dtm, test.dtm)
-    df$addresseeType[r] <- as.character(predict(m, xTest))
+    df$addresseeType[r] <- as.character(predict(model, xTest))
 
     # prediction post-processing
     if (df$addresseeType[r]=='threadOP') {

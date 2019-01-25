@@ -2,7 +2,7 @@
 #'
 #' Predict the author's intent in writing a CrimeBB post.
 #' Assumes at least the following columns: post, firstPost, sentiment (last 2 columns come from initial_processing() function).
-#' Dependencies: tm, xgboost
+#' Dependencies: tm, LiblineaR
 #' @param df Input data frame object for processing, plus optional trained model, document-term matrix and list of labels used in model training.
 #' @keywords author intent, sentiment
 #' @export
@@ -10,20 +10,28 @@
 #' predict_intent(my.df)
 
 predict_intent <- function(df, model=NULL, train.dtm=NULL, labs=NULL) {
+  # get	working	directory
+  pwd <- getwd()
+  prefix <- 'tools/CrimeBBprocessR/R/'
+  if (grepl('CrimeBBprocessR/R/', pwd)) {
+    prefix <- './'
+  }
 
-  # load XGB model pre-trained by postTypeAuthorIntentAddresseeExperiments.R
+  # load XGB/SVM model pre-trained by postTypeAuthorIntentAddresseeExperiments.R
   if (is.null(model)) {
-    model <- xgb.load('authorIntent_XGB.bin')
+#    model <- xgb.load('authorIntent_XGB.bin')
+    model <- readRDS(paste0(prefix, 'authorIntent_SVM.rds'))
   }
   # plus associated training data
   if (is.null(train.dtm)) {
-    train.dtm <- readRDS('authorIntent_dtm.rds')
+#    train.dtm <- readRDS('authorIntent_dtm.rds')
+    train.dtm <- readRDS(paste0(prefix, 'authorIntent_SVM_dtm.rds'))
   }
-  # and label set (needed with e.g. XGBoost, not LM)
-  if (is.null(labs)) {
-    labs <- readRDS('authorIntent_labels.rds')
-  }
-  nLabels <- length(labs)
+  # and label set (needed with e.g. XGBoost, but not SVM)
+  #if (is.null(labs)) {
+  #  labs <- readRDS('authorIntent_labels.rds')
+  #}
+  #nLabels <- length(labs)
 
   # best guess at author's intent for each post
   df$intent <- ''
@@ -49,15 +57,19 @@ predict_intent <- function(df, model=NULL, train.dtm=NULL, labs=NULL) {
         df$intent[r] <- 'positive'
       } else {
         ## XGB classifier
-        test.dtm <- data_prep(df[r,], xgb=T)
+#        test.dtm <- data_prep(df[r,], xgb=T)
+#        xTest <- matrix_align(train.dtm, test.dtm)
+#        predict.vec <- predict(model, xTest)
+#        predict.df <- matrix(predict.vec, nrow=nLabels, ncol=length(predict.vec)/nLabels) %>% t() %>% data.frame() %>% mutate(max_prob=max.col(., 'last'))
+#        df$intent[r] <- as.character(labs[(predict.df$max_prob)-1])
+        ## SVM classifier
+        test.dtm <- data_prep(df[r,])
         xTest <- matrix_align(train.dtm, test.dtm)
-        predict.vec <- predict(model, xTest)
-        predict.df <- matrix(predict.vec, nrow=nLabels, ncol=length(predict.vec)/nLabels) %>% t() %>% data.frame() %>% mutate(max_prob=max.col(., 'last'))
-        df$postType[r] <- as.character(labs[(predict.df$max_prob)-1])
+        df$intent[r] <- as.character(predict(model, xTest))
       }
     }
   }
-  ## append pm label
+  ## append pm label?
   if (grepl('\\bpm.*e*d*\\b|\\bhmu\\b|contact me\\b|skype|discord', df$post[r], perl=T, ignore.case=T)) {
       df$intent[r] <- paste0(df$intent[r], ',privatemessage')
   }
