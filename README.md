@@ -4,7 +4,7 @@ _Open source code and resources arising from the ATI-funded Data Science for Cyb
 In order to use these scripts you need to obtain the CrimeBB database of hacking-related web forum posts.
 Further information is available on the [Cambridge Cybercrime Centre website](https://www.cambridgecybercrime.uk/process.html).
 
-## Contents
+### Contents
 * CrimeBBprocessR: library of R scripts for CrimeBB analysis and automated labelling;
 * Social_Network_Analysis: python and R scripts for Social Network Analysis and analysis of interests
 
@@ -24,7 +24,10 @@ pacman::p_load(dbplyr, dplyr)
 con <- src_postgres(dbname='crimebb')
 post <- tbl(con, 'Post')
 threadID <- 1238274  # for example
-post.sub <- post %>% filter(Thread==threadID) %>% select(IdPost:Content, AuthorName) %>% dplyr::collect() %>% as.data.frame()
+post.sub <- post %>%
+  filter(Thread==threadID) %>%
+  select(IdPost:Content, AuthorName) %>%
+  dplyr::collect() %>% as.data.frame()
 colnames(post.sub) <- c('postID', 'authorID', 'threadID', 'timestamp', 'post', 'author')
 ```
 
@@ -32,8 +35,10 @@ Then match up the posts with some info about the thread and bulletin board:
 ```
 pacman::p_load(CrimeBBprocessR, stringr, text2vec, tidytext, nnet, tm, LiblineaR)
 thread <- tbl(con, 'Thread')
-thread.df <- thread %>% filter(Site==0) %>% select(IdThread, Author:Heading) %>% dplyr::collect() %>% as.data.frame()  # HF site 0
-thread.sub <- subset(thread.df, IdThread==threadID)
+thread.sub <- thread %>%
+  filter(Site==0,IdThread==threadID) %>%  # HF site 0
+  select(IdThread, Author:Heading) %>%
+  dplyr::collect() %>% as.data.frame()
 threadTitle <- ""
 bboardID <- NA
 if (nrow(thread.sub)>0) {
@@ -47,11 +52,13 @@ if (nrow(thread.sub)>0) {
   threadOP <- longest$author[1]
   threadOPid <- longest$authorID[1]
 }
-bboard <- tbl(con, 'Forum')
-bboard.df <- bboard %>% filter(Site==0) %>% select(IdForum, Title) %>% dplyr::collect() %>% as.data.frame()  # HF site 0
 bboardTitle <- ""
-if (!is.null(bboardID)) {  # handle empty bulletin board IDs
-  bboard.sub <- subset(bboard.df, IdForum==bboardID)
+if (!is.null(bboardID)) {
+  bboard <- tbl(con, 'Forum')
+  bboard.sub <- bboard %>%
+    filter(Site==0,IdForum==bboardID) %>%
+    select(IdForum, Title) %>%
+    dplyr::collect() %>% as.data.frame()
   bboardTitle <- bboard.sub$Title[1]
 }
 post.sub$threadTitle <- threadTitle
