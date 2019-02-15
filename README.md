@@ -15,7 +15,12 @@ The models and heuristics which constitute the prediction functions in this libr
 
 It is assumed that you have a data frame of HackForums posts, obtained from CrimeBB. Other forums in the database have not been tested. Please contact Andrew (apc38 at cam dot ac dot uk) about adaptation of the tools to other datasets.
 
-Thus assume you have some HackForums posts, ideally a whole set (or sets) of posts for a given thread ID (or IDs):
+Firstly we need to install the library, which you can do from the command line with the supplied installation script (from the top directory):
+```
+$ Rscript installRlibrary.R
+```
+
+Then we need to collect some HackForums posts, ideally working with a whole set (or sets) of posts for a given thread ID (or IDs):
 
 ```
 if (!require("pacman")) install.packages("pacman")
