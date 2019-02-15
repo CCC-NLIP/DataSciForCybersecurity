@@ -10,7 +10,7 @@
 #' initial_processing(my.df)
 
 initial_processing <- function(df) {
-
+  
   # replace newlines with double backslash
   df$post <- gsub("\\n", " \\\\ ", df$post, perl=T)
 
@@ -21,10 +21,10 @@ initial_processing <- function(df) {
   df$post <- gsub(";", "", df$post, perl=T)
   df$threadTitle <- gsub(";", "", df$threadTitle, perl=T)
 
-  # rm punctuation from usernames while retaining a copy
-  df$authorOriginal <- df$author
+  # rm punctuation from usernames while retaining a copy (AC 2019-02-08: not a good idea if it contains a speech mark for ex.!)
+#  df$authorOriginal <- df$author
   df$author <- gsub('[[:punct:]]', '', df$author, perl=T)
-  df$threadOPoriginal <- df$threadOP
+#  df$threadOPoriginal <- df$threadOP
   df$threadOP <- gsub('[[:punct:]]', '', df$threadOP, perl=T)
   
   # add index to each thread
@@ -44,7 +44,15 @@ initial_processing <- function(df) {
     length(unlist(strsplit(post, ' ')))
   }
   df$tokenCount <- unlist(lapply(df$post, countTokens))
-
+  
+  # clip posts at n.max words (otherwise memory mapping problems; does not carry fwd, posts thrown away b4 save to db)
+  n.max.words <- 200
+  for (r in 1:nrow(df)) {
+    if (df$tokenCount[r]>n.max.words) {
+      df$post[r] <- paste(unlist(strsplit(df$post[r], ' '))[1:n.max.words], collapse=' ')
+    }
+  }
+  
   # check for images, links, code, iframes, citations
   grepPost <- function(post, regex) {
     grepl(paste0('\\*', toupper(regex), '\\*'), post, perl=T)

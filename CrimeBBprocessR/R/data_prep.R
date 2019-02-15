@@ -15,7 +15,7 @@ data_prep <- function(df, xgb=F) {
   corpus <- VCorpus(VectorSource(df$post))
   dtm.mx <- as.matrix(DocumentTermMatrix(corpus, control=list(removePunctuation=T, stopwords=T, stemming=F, removeNumbers=T, minDocFreq=2, weighting=TfIdf)))
   if (!xgb) {
-    extra.feats <- df[,c(10,14:15,17:21)]
+    extra.feats <- df[,c(10,12:13,15:19)]
     dtm.mx <- cbind(dtm.mx, extra.feats)
   }
   dtm.df <- as.data.frame(dtm.mx)

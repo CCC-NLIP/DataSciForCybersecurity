@@ -12,8 +12,8 @@ data_prep(df, xgb = F)
 \description{
 Convert CrimeBB data frame to df for model training
 Assumes the following columns: post
-Assumes the following columns at positions 9,10,11,12,13,17,24,26,27,31,32:
-hasImage, hasLink, hasCode, hasIframe, hasCitation, addressOP, forumID, firstPost, threadCount, authorIsOP, citesOP
+Assumes the following columns at positions 10, 14, 15, 17:21
+bboardID, postNumber, firstPost, hasImage, hasCode, hasLink, hasIframe, hasCitation
 Dependencies: tm, xgboost
 }
 \examples{

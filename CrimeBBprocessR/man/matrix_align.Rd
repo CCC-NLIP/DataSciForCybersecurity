@@ -4,18 +4,17 @@
 \alias{matrix_align}
 \title{Align Document-Term Matrices}
 \usage{
-matrix_align(df1, df2)
+matrix_align(mtx1, mtx2)
 }
 \arguments{
-\item{df}{Two data frames}
+\item{df}{Two matrix objects, where the first matrix has at least as many columns as matrix 2}
 }
 \description{
-Align two data frames where 1st df was used to train stat.model and 2nd df is target data
+Align two document-term matrices where 1st dtm was used to train stat.model and 2nd dtm is new test data
 Returns matrix with columns ordered alphabetically by column header
-Assumes the following columns: post
 }
 \examples{
-matrix_align(my.df1, my.df2)
+matrix_align(mtx1, mtx2)
 }
 \keyword{learning}
 \keyword{machine}

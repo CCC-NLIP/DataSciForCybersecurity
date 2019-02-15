@@ -12,7 +12,7 @@ predict_intent(df, model = NULL, train.dtm = NULL, labs = NULL)
 \description{
 Predict the author's intent in writing a CrimeBB post.
 Assumes at least the following columns: post, firstPost, sentiment (last 2 columns come from initial_processing() function).
-Dependencies: tm, xgboost
+Dependencies: tm, LiblineaR
 }
 \examples{
 predict_intent(my.df)
