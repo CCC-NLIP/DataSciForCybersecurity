@@ -68,7 +68,7 @@ post.sub$bboardID <- bboardID
 post.sub$bboardTitle <- bboardTitle
 ```
 
-Your data frame is ready for `initial_processing()`. You should by now have the following columns: `postID, authorID, 
+Your data frame is ready for processing. You should by now have the following columns: `postID, authorID, 
 threadID, timestamp, post, author, threadTitle, threadOP, threadOPid, bboardID, bboardTitle`.
 ```
 df1 <- initial_processing(post.sub)
@@ -86,8 +86,8 @@ df4 <- predict_posttype(df3)
 df5 <- predict_intent(df4)
 ```
 
-Finally, there's a call to the function which matches reputation votes to posts. This is computationally expensive (I intend to resolve this) and so is best called with
-the 'execute' flag set to `FALSE`. This way it returns a bunch of empty columns
+Finally, there's a call to the function which matches reputation votes to posts. This is computationally expensive (AC intends to resolve this) and so is best called with
+the 'execute' flag set to `FALSE`. This way it returns the data frame with new empty columns relating to reputation votes.
 ```
 memb.df <- data.frame()
 rep.df <- data.frame()
